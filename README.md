@@ -29,7 +29,7 @@ WiFi Repairs helps you fix all these issues and more! It's like having a network
 
 1. First, grab a copy of WiFi Repairs:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/rhythmcreative/wifi-diagnostics.git
    cd wifi-diagnostics-tool
    ```
 
