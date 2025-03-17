@@ -1,0 +1,32 @@
+# Core requirements
+python3
+python-pip
+
+# Basic network commands and utilities
+iproute2
+wireless-tools
+net-tools
+iw
+NetworkManager
+wpa_supplicant
+
+# DHCP clients
+dhcpcd
+dhclient
+
+# Hardware management
+pciutils
+rfkill
+lshw
+
+# Network diagnostics and tools
+speedtest-cli
+nmap
+tcpdump
+netcat-openbsd
+bind-utils
+dnsutils
+iptables
+curl
+wget
+bc
