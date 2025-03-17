@@ -81,5 +81,5 @@ We hope this tool makes your WiFi troubles disappear. If you like it, share it w
 ---
 
 <div align="center">
-Made with ❤️ to make WiFi problems a thing of the past
+Made with ❤️ to make Linux community :)
 </div>
