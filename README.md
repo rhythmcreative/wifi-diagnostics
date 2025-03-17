@@ -84,6 +84,5 @@ A: No, the tool is designed for users of all skill levels.
 
 <div align="center">
   
-### 🌐 WiFi Repairs - Simplifying network troubleshooting
-
+### RHYTHMCREATIVE
 </div>
