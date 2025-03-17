@@ -50,7 +50,7 @@ WiFi Repairs helps you fix all these issues and more! It's like having a network
 - Test your internet speed
 - Find and fix connection problems
 - Get detailed network information
-- And lots more!
+- And more things
 
 The tool guides you through everything with simple menus - no complicated commands needed!
 
@@ -73,9 +73,12 @@ A: If you're running Linux, you're good to go!
 **Q: Do I need to be a network expert?**
 A: Not at all! The tool explains everything as you go.
 
-## Thanks for Trying WiFi Repairs!
 
-We hope this tool makes your WiFi troubles disappear. If you like it, share it with your friends!
+**Q: Does it work on other distros?**
+A: For now it only works with arch.
+
+
+I hope this tool makes your WiFi troubles disappear.
 
 ---
 
