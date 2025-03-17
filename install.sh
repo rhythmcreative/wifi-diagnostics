@@ -1,643 +1,251 @@
 #!/bin/bash
 
-# Color definitions
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
-
-# Array to track failed packages
-declare -a failed_packages=()
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-echo -e "${BLUE}Installing WiFi Diagnostics Tool...${NC}"
-
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Please run as root (use sudo)${NC}"
-    exit 1
-fi
-
-# Detect package manager
-if command_exists pacman; then
-    PKG_MANAGER="pacman"
-    INSTALL_CMD="pacman -S --noconfirm --needed"
-    UPDATE_CMD="pacman -Sy"
-    # Define mappings for Arch Linux packages
-    declare -A ARCH_PKG_MAP=(
-        ["python3"]="python"
-        ["python-pip"]="python-pip"
-        ["iproute2"]="iproute2"
-        ["wireless-tools"]="wireless_tools"
-        ["net-tools"]="net-tools"
-        ["iw"]="iw"
-        ["NetworkManager"]="networkmanager"
-        ["wpa_supplicant"]="wpa_supplicant"
-        ["dhcpcd"]="dhcpcd"
-        ["dhclient"]="dhclient"
-        ["pciutils"]="pciutils"
-        ["rfkill"]="util-linux"
-        ["lshw"]="lshw"
-        ["speedtest-cli"]="speedtest-cli"
-        ["nmap"]="nmap"
-        ["tcpdump"]="tcpdump"
-        ["netcat-openbsd"]="openbsd-netcat"
-        ["bind-utils"]="bind-tools"
-        ["dnsutils"]="bind-tools"
-        ["iptables"]="iptables"
-        ["curl"]="curl"
-        ["wget"]="wget"
-        ["bc"]="bc"
-    )
-elif command_exists apt-get; then
-    PKG_MANAGER="apt"
-    INSTALL_CMD="apt-get install -y"
-    UPDATE_CMD="apt-get update"
-    # Package name mappings for Debian/Ubuntu
-    PKG_MAP=(
-        "bind-utils:dnsutils"
-        "netcat-openbsd:netcat-openbsd"
-    )
-elif command_exists dnf; then
-    PKG_MANAGER="dnf"
-    INSTALL_CMD="dnf install -y"
-    UPDATE_CMD="dnf check-update"
-    # Package name mappings for Fedora
-    PKG_MAP=(
-        "dnsutils:bind-utils"
-        "netcat-openbsd:netcat"
-    )
-elif command_exists yum; then
-    PKG_MANAGER="yum"
-    INSTALL_CMD="yum install -y"
-    UPDATE_CMD="yum check-update"
-    # Package name mappings for CentOS/RHEL
-    PKG_MAP=(
-        "dnsutils:bind-utils"
-        "netcat-openbsd:nmap-ncat"
-        "dhclient:dhcp-client"
-    )
-else
-    echo -e "${RED}No supported package manager found. Please install dependencies manually.${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}Detected package manager: $PKG_MANAGER${NC}"
-
-# Update package lists
-echo -e "${BLUE}Updating package lists...${NC}"
-eval "$UPDATE_CMD"
-
-echo -e "${BLUE}Installing dependencies...${NC}"
-
-# Process each package from requirements.txt
-while read package; do
-    # Skip empty lines and comments
-    if [[ -z "$package" || "$package" =~ ^[[:space:]]*$ || "$package" =~ ^# ]]; then
-        continue
-    fi
-    
-    # Trim whitespace
-    package=$(echo "$package" | xargs)
-    
-    if [[ "$PKG_MANAGER" == "pacman" ]]; then
-        # For Arch Linux, handle package mapping
-        if [[ -n "${ARCH_PKG_MAP[$package]}" ]]; then
-            mapped_package="${ARCH_PKG_MAP[$package]}"
-            echo -e "${BLUE}Installing: $package (mapped to ${mapped_package})${NC}"
-        else
-            mapped_package="$package"
-            echo -e "${YELLOW}No mapping found for $package, using original name${NC}"
-        fi
-        
-        # Check if package is already installed
-        if pacman -Qi "$mapped_package" &>/dev/null; then
-            echo -e "${GREEN}Package $mapped_package is already installed${NC}"
-        else
-            echo -e "${BLUE}Installing package: $mapped_package${NC}"
-            if eval "$INSTALL_CMD $mapped_package"; then
-                echo -e "${GREEN}Successfully installed $mapped_package${NC}"
-            else
-                echo -e "${RED}Failed to install $mapped_package${NC}"
-                failed_packages+=("$package -> $mapped_package")
-            fi
-        fi
-    else
-        # For other package managers
-        mapped_package="$package"
-        # Apply package mapping if available
-        for mapping in "${PKG_MAP[@]}"; do
-            original=$(echo "$mapping" | cut -d: -f1)
-            mapped=$(echo "$mapping" | cut -d: -f2)
-            if [[ "$package" == "$original" ]]; then
-                mapped_package="$mapped"
-                echo -e "${BLUE}Mapping package: $package -> $mapped_package${NC}"
-                break
-            fi
-        done
-        
-        echo -e "${BLUE}Installing package: $mapped_package${NC}"
-        if eval "$INSTALL_CMD $mapped_package"; then
-            echo -e "${GREEN}Successfully installed $mapped_package${NC}"
-        else
-            echo -e "${RED}Failed to install $mapped_package${NC}"
-            failed_packages+=("$package -> $mapped_package")
-        fi
-    fi
-done < requirements.txt
-
-# Make script executable
-echo -e "${BLUE}Setting up executable...${NC}"
-chmod +x wifi_troubleshooter.sh
-
-# Create symbolic link
-ln -sf "$(pwd)/wifi_troubleshooter.sh" /usr/local/bin/wifi-diagnostics
-
-# Report any failed packages
-if [ ${#failed_packages[@]} -ne 0 ]; then
-    echo -e "${YELLOW}The following packages failed to install:${NC}"
-    printf '%s\n' "${failed_packages[@]}"
-fi
-
-echo -e "${GREEN}Installation complete!${NC}"
-echo -e "You can now run the tool by typing: ${BLUE}wifi-diagnostics${NC}"
-
-#!/bin/bash
-
-# Color definitions
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
-
-# Array to track failed packages
-declare -a failed_packages=()
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-echo -e "${BLUE}Installing WiFi Diagnostics Tool...${NC}"
-
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Please run as root (use sudo)${NC}"
-    exit 1
-fi
-
-# Detect package manager
-if command_exists pacman; then
-    PKG_MANAGER="pacman"
-    INSTALL_CMD="pacman -S --noconfirm --needed"
-    UPDATE_CMD="pacman -Sy"
-elif command_exists apt-get; then
-    PKG_MANAGER="apt"
-    INSTALL_CMD="apt-get install -y"
-    UPDATE_CMD="apt-get update"
-elif command_exists dnf; then
-    PKG_MANAGER="dnf"
-    INSTALL_CMD="dnf install -y"
-    UPDATE_CMD="dnf check-update"
-elif command_exists yum; then
-    PKG_MANAGER="yum"
-    INSTALL_CMD="yum install -y"
-    UPDATE_CMD="yum check-update"
-else
-    echo -e "${RED}No supported package manager found. Please install dependencies manually.${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}Detected package manager: $PKG_MANAGER${NC}"
-
-# Update package lists
-echo -e "${BLUE}Updating package lists...${NC}"
-eval "$UPDATE_CMD"
-
-# Define package mappings for different distributions
-if [[ "$PKG_MANAGER" == "pacman" ]]; then
-    # Define mappings for Arch Linux packages
-    declare -A ARCH_PKG_MAP=(
-        ["python3"]="python"
-        ["python-pip"]="python-pip"
-        ["iproute2"]="iproute2"
-        ["wireless-tools"]="wireless_tools"
-        ["net-tools"]="net-tools"
-        ["iw"]="iw"
-        ["NetworkManager"]="networkmanager"
-        ["wpa_supplicant"]="wpa_supplicant"
-        ["dhcpcd"]="dhcpcd"
-        ["dhclient"]="dhclient"
-        ["pciutils"]="pciutils"
-        ["rfkill"]="util-linux"
-        ["lshw"]="lshw"
-        ["speedtest-cli"]="speedtest-cli"
-        ["nmap"]="nmap"
-        ["tcpdump"]="tcpdump"
-        ["netcat-openbsd"]="openbsd-netcat"
-        ["bind-utils"]="bind-tools"
-        ["dnsutils"]="bind-tools"
-        ["iptables"]="iptables"
-        ["curl"]="curl"
-        ["wget"]="wget"
-        ["bc"]="bc"
-    )
-elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    PKG_MAP=(
-        "bind-utils:dnsutils"
-        "netcat-openbsd:netcat-openbsd"
-    )
-elif [[ "$PKG_MANAGER" == "dnf" ]]; then
-    PKG_MAP=(
-        "dnsutils:bind-utils"
-        "netcat-openbsd:netcat"
-    )
-elif [[ "$PKG_MANAGER" == "yum" ]]; then
-    PKG_MAP=(
-        "dnsutils:bind-utils"
-        "netcat-openbsd:nmap-ncat"
-        "dhclient:dhcp-client"
-    )
-fi
-
-echo -e "${BLUE}Installing dependencies...${NC}"
-
-# Process each package from requirements.txt
-while read package; do
-    # Skip empty lines and comments
-    if [[ -z "$package" || "$package" =~ ^[[:space:]]*$ || "$package" =~ ^# ]]; then
-        continue
-    fi
-    
-    # Trim whitespace
-    package=$(echo "$package" | xargs)
-    
-    if [[ "$PKG_MANAGER" == "pacman" ]]; then
-        # For Arch Linux, handle package mapping
-        if [[ -n "${ARCH_PKG_MAP[$package]}" ]]; then
-            mapped_package="${ARCH_PKG_MAP[$package]}"
-            echo -e "${BLUE}Installing: $package (mapped to ${mapped_package})${NC}"
-        else
-            mapped_package="$package"
-            echo -e "${YELLOW}No mapping found for $package, using original name${NC}"
-        fi
-        
-        # Check if package is already installed
-        if pacman -Qi "$mapped_package" &>/dev/null; then
-            echo -e "${GREEN}Package $mapped_package is already installed${NC}"
-        else
-            echo -e "${BLUE}Installing package: $mapped_package${NC}"
-            if eval "$INSTALL_CMD $mapped_package"; then
-                echo -e "${GREEN}Successfully installed $mapped_package${NC}"
-            else
-                echo -e "${RED}Failed to install $mapped_package${NC}"
-                failed_packages+=("$package -> $mapped_package")
-            fi
-        fi
-    else
-        # For other package managers
-        mapped_package="$package"
-        # Apply package mapping if available
-        for mapping in "${PKG_MAP[@]}"; do
-            original=$(echo "$mapping" | cut -d: -f1)
-            mapped=$(echo "$mapping" | cut -d: -f2)
-            if [[ "$package" == "$original" ]]; then
-                mapped_package="$mapped"
-                echo -e "${BLUE}Mapping package: $package -> $mapped_package${NC}"
-                break
-            fi
-        done
-        
-        echo -e "${BLUE}Installing package: $mapped_package${NC}"
-        if eval "$INSTALL_CMD $mapped_package"; then
-            echo -e "${GREEN}Successfully installed $mapped_package${NC}"
-        else
-            echo -e "${RED}Failed to install $mapped_package${NC}"
-            failed_packages+=("$package -> $mapped_package")
-        fi
-    fi
-done < requirements.txt
-
-# Make script executable
-echo -e "${BLUE}Setting up executable...${NC}"
-chmod +x wifi_troubleshooter.sh
-
-# Create symbolic link
-ln -sf "$(pwd)/wifi_troubleshooter.sh" /usr/local/bin/wifi-diagnostics
-
-# Report any failed packages
-if [ ${#failed_packages[@]} -ne 0 ]; then
-    echo -e "${YELLOW}The following packages failed to install:${NC}"
-    printf '%s\n' "${failed_packages[@]}"
-fi
-
-echo -e "${GREEN}Installation complete!${NC}"
-echo -e "You can now run the tool by typing: ${BLUE}wifi-diagnostics${NC}"
-
-#!/bin/bash
-
-# Color definitions
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
-
-# Array to track failed packages
-declare -a failed_packages=()
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-echo -e "${BLUE}Installing WiFi Diagnostics Tool...${NC}"
-
-# Detect package manager
-if command_exists pacman; then
-    PKG_MANAGER="pacman"
-    INSTALL_CMD="pacman -S --noconfirm --needed"
-    UPDATE_CMD="pacman -Sy"
-elif command_exists apt-get; then
-    PKG_MANAGER="apt"
-    INSTALL_CMD="apt-get install -y"
-    UPDATE_CMD="apt-get update"
-elif command_exists dnf; then
-    PKG_MANAGER="dnf"
-    INSTALL_CMD="dnf install -y"
-    UPDATE_CMD="dnf check-update"
-elif command_exists yum; then
-    PKG_MANAGER="yum"
-    INSTALL_CMD="yum install -y"
-    UPDATE_CMD="yum check-update"
-else
-    echo -e "${RED}No supported package manager found. Please install dependencies manually.${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}Detected package manager: $PKG_MANAGER${NC}"
-
-# Update package lists
-echo -e "${BLUE}Updating package lists...${NC}"
-eval "$UPDATE_CMD"
-
-# Define package mappings for different distributions
-if [[ "$PKG_MANAGER" == "pacman" ]]; then
-    # Define mappings for Arch Linux packages
-    declare -A ARCH_PKG_MAP=(
-        ["python3"]="python"
-        ["python-pip"]="python-pip"
-        ["iproute2"]="iproute2"
-        ["wireless-tools"]="wireless_tools"
-        ["net-tools"]="net-tools"
-        ["iw"]="iw"
-        ["NetworkManager"]="networkmanager"
-        ["wpa_supplicant"]="wpa_supplicant"
-        ["dhcpcd"]="dhcpcd"
-        ["dhclient"]="dhclient"
-        ["pciutils"]="pciutils"
-        ["rfkill"]="util-linux"
-        ["lshw"]="lshw"
-        ["speedtest-cli"]="speedtest-cli"
-        ["nmap"]="nmap"
-        ["tcpdump"]="tcpdump"
-        ["netcat-openbsd"]="openbsd-netcat"
-        ["bind-utils"]="bind-tools"
-        ["dnsutils"]="bind-tools"
-        ["iptables"]="iptables"
-        ["curl"]="curl"
-        ["wget"]="wget"
-        ["bc"]="bc"
-    )
-fi
-
-echo -e "${BLUE}Installing dependencies...${NC}"
-
-# Process each package from requirements.txt
-while read package; do
-    # Skip empty lines and comments
-    if [[ -z "$package" || "$package" =~ ^[[:space:]]*$ || "$package" =~ ^# ]]; then
-        continue
-    fi
-    
-    if [[ "$PKG_MANAGER" == "pacman" ]]; then
-        # For Arch Linux, handle package mapping
-        if [[ -n "${ARCH_PKG_MAP[$package]}" ]]; then
-            mapped_package="${ARCH_PKG_MAP[$package]}"
-            echo -e "${BLUE}Installing: $package (mapped to ${mapped_package})${NC}"
-        else
-            mapped_package="$package"
-            echo -e "${YELLOW}No mapping found for $package, using original name${NC}"
-        fi
-        
-        # Check if package is already installed
-        if pacman -Qi "$mapped_package" &>/dev/null; then
-            echo -e "${GREEN}Package $mapped_package is already installed${NC}"
-        else
-            echo -e "${BLUE}Installing package: $mapped_package${NC}"
-            if eval "$INSTALL_CMD $mapped_package"; then
-                echo -e "${GREEN}Successfully installed $mapped_package${NC}"
-            else
-                echo -e "${RED}Failed to install $mapped_package${NC}"
-                failed_packages+=("$package -> $mapped_package")
-            fi
-        fi
-    else
-        # For other package managers
-        echo -e "${BLUE}Installing package: $package${NC}"
-        if eval "$INSTALL_CMD $package"; then
-            echo -e "${GREEN}Successfully installed $package${NC}"
-        else
-            echo -e "${RED}Failed to install $package${NC}"
-            failed_packages+=("$package")
-        fi
-    fi
-done < requirements.txt
-
-# Make script executable
-echo -e "${BLUE}Setting up executable...${NC}"
-chmod +x wifi_troubleshooter.sh
-
-# Create symbolic link
-ln -sf "$(pwd)/wifi_troubleshooter.sh" /usr/local/bin/wifi-diagnostics
-
-# Report any failed packages
-if [ ${#failed_packages[@]} -ne 0 ]; then
-    echo -e "${YELLOW}The following packages failed to install:${NC}"
-    printf '%s\n' "${failed_packages[@]}"
-fi
-
-echo -e "${GREEN}Installation complete!${NC}"
-echo -e "You can now run the tool by typing: ${BLUE}wifi-diagnostics${NC}"
-
-#!/bin/bash
-
 # Colors for output
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
 RED='\033[0;31m'
+GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
-NC='\033[0m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
-# Array to track failed packages
-declare -a failed_packages=()
+# Function to print colored messages
+print_message() {
+    local color=$1
+    local message=$2
+    echo -e "${color}${message}${NC}"
+}
 
-echo -e "${BLUE}Installing WiFi Diagnostics Tool...${NC}"
-
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Please run as root (use sudo)${NC}"
+# Function to print error and exit
+error_exit() {
+    print_message "${RED}" "ERROR: $1"
     exit 1
-fi
+}
 
-# Detect package manager
-if command -v apt &> /dev/null; then
-    PKG_MANAGER="apt"
-    UPDATE_CMD="apt update"
-    INSTALL_CMD="apt install -y"
-    # Package name mappings for Debian/Ubuntu
-    PKG_MAP=(
-        "bind-utils:dnsutils" 
-        "netcat-openbsd:netcat-openbsd"
-    )
-elif command -v dnf &> /dev/null; then
-    PKG_MANAGER="dnf"
-    UPDATE_CMD="dnf check-update"
-    INSTALL_CMD="dnf install -y"
-    # Package name mappings for Fedora
-    PKG_MAP=(
-        "dnsutils:bind-utils"
-        "netcat-openbsd:netcat"
-    )
-elif command -v yum &> /dev/null; then
-    PKG_MANAGER="yum"
-    UPDATE_CMD="yum check-update"
-    INSTALL_CMD="yum install -y"
-    # Package name mappings for CentOS/RHEL
-    PKG_MAP=(
-        "dnsutils:bind-utils"
-        "netcat-openbsd:nmap-ncat"
-        "dhclient:dhcp-client"
-    )
-elif command -v pacman &> /dev/null; then
-    PKG_MANAGER="pacman"
-    UPDATE_CMD="pacman -Syy"
-    INSTALL_CMD="pacman -S --noconfirm --needed"
-    
-    # Define a direct mapping for Arch Linux packages
-    declare -A ARCH_PKG_MAP=(
-        ["python3"]="python"
-        ["python-pip"]="python-pip"
-        ["iproute2"]="iproute2"
-        ["wireless-tools"]="wireless_tools"
-        ["net-tools"]="net-tools"
-        ["iw"]="iw"
-        ["NetworkManager"]="networkmanager"
-        ["wpa_supplicant"]="wpa_supplicant"
-        ["dhcpcd"]="dhcpcd"
-        ["dhclient"]="dhclient"
-        ["pciutils"]="pciutils"
-        ["rfkill"]="util-linux"
-        ["lshw"]="lshw"
-        ["speedtest-cli"]="speedtest-cli"
-        ["nmap"]="nmap"
-        ["tcpdump"]="tcpdump"
-        ["netcat-openbsd"]="openbsd-netcat"
-        ["bind-utils"]="bind-tools"
-        ["dnsutils"]="bind-tools"
-        ["iptables"]="iptables"
-        ["curl"]="curl"
-        ["wget"]="wget"
-        ["bc"]="bc"
-    )
-else
-    echo -e "${RED}Unsupported package manager. Please install dependencies manually.${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}Detected package manager: ${PKG_MANAGER}${NC}"
-
-# Update package lists
-echo -e "${BLUE}Updating package lists...${NC}"
-eval $UPDATE_CMD
-
-# Install dependencies
-echo -e "${BLUE}Installing dependencies...${NC}"
-
-# Process each package from requirements.txt
-while read package; do
-    # Skip empty package names
-    if [[ -z "$package" || "$package" =~ ^[[:space:]]*$ || "$package" =~ ^# ]]; then
-        continue
+# Check if script is run with root privileges
+check_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        error_exit "This script must be run as root or with sudo privileges."
     fi
-    
-    # Trim whitespace
-    package=$(echo "$package" | xargs)
-    
-    # Skip if package is empty after trimming
-    if [[ -z "$package" ]]; then
-        continue
-    fi
-    
-    # Map package names based on the package manager
-    if [[ "$PKG_MANAGER" == "pacman" ]]; then
-        # For Arch Linux, handle package mapping
-        if [[ -n "${ARCH_PKG_MAP[$package]}" ]]; then
-            mapped_package="${ARCH_PKG_MAP[$package]}"
-            echo -e "${BLUE}Installing: $package (using ${mapped_package})${NC}"
-        else
-            mapped_package="$package"
-            echo -e "${YELLOW}Using original package name: $package${NC}"
-        fi
+}
+
+# Detect OS and set package manager
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+        VERSION=$VERSION_ID
         
-        # Check if package is already installed
-        if pacman -Qi "$mapped_package" &>/dev/null; then
-            echo -e "${GREEN}Package $mapped_package is already installed${NC}"
+        case $OS in
+            debian|ubuntu|mint|elementary|kali|zorin)
+                PKG_MANAGER="apt-get"
+                PKG_UPDATE="$PKG_MANAGER update"
+                PKG_INSTALL="$PKG_MANAGER install -y"
+                PACKAGES=(
+                    "iproute2"
+                    "wireless-tools"
+                    "wpasupplicant"
+                    "iw"
+                    "net-tools"
+                    "dnsutils"
+                    "pciutils"
+                    "network-manager"
+                )
+                print_message "${GREEN}" "Detected Debian-based system: $OS $VERSION"
+                ;;
+            rhel|fedora|centos|rocky|almalinux|ol)
+                PKG_MANAGER="dnf"
+                # Fall back to yum for older systems
+                if ! command -v dnf &> /dev/null; then
+                    PKG_MANAGER="yum"
+                fi
+                PKG_UPDATE="$PKG_MANAGER check-update || true"
+                PKG_INSTALL="$PKG_MANAGER install -y"
+                PACKAGES=(
+                    "iproute"
+                    "wireless-tools"
+                    "wpa_supplicant"
+                    "iw"
+                    "net-tools"
+                    "bind-utils"
+                    "pciutils"
+                    "NetworkManager"
+                )
+                print_message "${GREEN}" "Detected Red Hat-based system: $OS $VERSION"
+                ;;
+            arch|manjaro|endeavouros)
+                PKG_MANAGER="pacman"
+                PKG_UPDATE="$PKG_MANAGER -Sy"
+                PKG_INSTALL="$PKG_MANAGER -S --noconfirm"
+                PACKAGES=(
+                    "iproute2"
+                    "wireless-tools"
+                    "wpa_supplicant"
+                    "iw"
+                    "net-tools"
+                    "bind"
+                    "pciutils"
+                    "networkmanager"
+                )
+                print_message "${GREEN}" "Detected Arch-based system: $OS"
+                ;;
+            *)
+                error_exit "Unsupported operating system: $OS"
+                ;;
+        esac
+    else
+        error_exit "Cannot detect operating system"
+    fi
+}
+
+# Check if a command is available
+command_exists() {
+    command -v "$1" &> /dev/null
+}
+
+# Function to check if a package is installed
+check_package() {
+    local package=$1
+    local needed_command=$2
+    
+    print_message "${BLUE}" "Checking for $package..."
+    
+    if command_exists "$needed_command"; then
+        print_message "${GREEN}" "✓ $package is already installed."
+        return 0
+    else
+        print_message "${YELLOW}" "✗ $package needs to be installed."
+        return 1
+    fi
+}
+
+# Function to install packages
+install_packages() {
+    print_message "${CYAN}" "Updating package lists..."
+    eval $PKG_UPDATE
+
+    local installation_needed=false
+    local packages_to_install=()
+    
+    # Define command to package mapping
+    declare -A cmd_pkg_map
+    cmd_pkg_map=( 
+        ["ip"]="iproute2" 
+        ["iwconfig"]="wireless-tools" 
+        ["wpa_supplicant"]="wpasupplicant" 
+        ["iw"]="iw" 
+        ["ifconfig"]="net-tools" 
+        ["dig"]="dnsutils" 
+        ["lspci"]="pciutils" 
+        ["nmcli"]="NetworkManager" 
+    )
+    
+    # For RHEL/CentOS/Fedora systems, adjust package names
+    if [[ "$OS" == "rhel" || "$OS" == "centos" || "$OS" == "fedora" || "$OS" == "rocky" || "$OS" == "almalinux" || "$OS" == "ol" ]]; then
+        cmd_pkg_map["ip"]="iproute"
+        cmd_pkg_map["dig"]="bind-utils"
+        cmd_pkg_map["wpa_supplicant"]="wpa_supplicant"
+    fi
+    
+    # For Arch-based systems, adjust package names
+    if [[ "$OS" == "arch" || "$OS" == "manjaro" || "$OS" == "endeavouros" ]]; then
+        cmd_pkg_map["dig"]="bind"
+        cmd_pkg_map["nmcli"]="networkmanager"
+    fi
+
+    # Check if commands exist and add corresponding packages to install list if needed
+    for cmd in "${!cmd_pkg_map[@]}"; do
+        pkg="${cmd_pkg_map[$cmd]}"
+        if ! command_exists "$cmd"; then
+            print_message "${YELLOW}" "Command '$cmd' not found. Will install package '$pkg'."
+            packages_to_install+=("$pkg")
+            installation_needed=true
         else
-            echo -e "${BLUE}Installing package: $mapped_package${NC}"
-            eval "$INSTALL_CMD $mapped_package" || {
-                echo -e "${RED}Failed to install ${mapped_package}${NC}"
-                failed_packages+=("$package -> $mapped_package")
-            }
+            print_message "${GREEN}" "✓ Command '$cmd' is available."
+        fi
+    done
+    
+    # Install missing packages
+    if [ "$installation_needed" = true ]; then
+        print_message "${CYAN}" "Installing missing packages: ${packages_to_install[*]}"
+        if $PKG_INSTALL "${packages_to_install[@]}"; then
+            print_message "${GREEN}" "All required packages installed successfully!"
+        else
+            error_exit "Failed to install some packages. Please check the output for errors."
         fi
     else
-        # For other package managers
-        mapped_package="$package"
-        for mapping in "${PKG_MAP[@]}"; do
-            original=$(echo $mapping | cut -d: -f1)
-            mapped=$(echo $mapping | cut -d: -f2)
-            if [[ "$package" == "$original" ]]; then
-                mapped_package="$mapped"
-                break
-            fi
-        done
-        
-        echo -e "${BLUE}Installing package: $package${NC}"
-        eval "$INSTALL_CMD $mapped_package" || {
-            echo -e "${RED}Failed to install ${mapped_package}${NC}"
-            failed_packages+=("$package")
-        }
+        print_message "${GREEN}" "All required packages are already installed."
     fi
-done < requirements.txt
+}
 
-# Make script executable
-echo -e "${BLUE}Setting up executable...${NC}"
-chmod +x wifi_troubleshooter.sh
+# Make wifi_troubleshooter.sh executable
+make_executable() {
+    if [ -f "wifi_troubleshooter.sh" ]; then
+        print_message "${BLUE}" "Making wifi_troubleshooter.sh executable..."
+        chmod +x wifi_troubleshooter.sh
+        print_message "${GREEN}" "✓ wifi_troubleshooter.sh is now executable."
+    else
+        print_message "${YELLOW}" "Warning: wifi_troubleshooter.sh not found in current directory."
+    fi
+}
 
-# Create symbolic link
-ln -sf "$(pwd)/wifi_troubleshooter.sh" /usr/local/bin/wifi-diagnostics
+# Create symbolic link for wifi_troubleshooter.sh
+create_symlink() {
+    print_message "${BLUE}" "Setting up 'wifi-diagnostics' command..."
+    
+    # Get the absolute path of wifi_troubleshooter.sh
+    SCRIPT_PATH="$(pwd)/wifi_troubleshooter.sh"
+    if [ ! -f "$SCRIPT_PATH" ]; then
+        print_message "${YELLOW}" "Warning: Could not find wifi_troubleshooter.sh in current directory."
+        return 1
+    fi
+    
+    # Check if the link already exists
+    if [ -L "/usr/local/bin/wifi-diagnostics" ] || [ -f "/usr/local/bin/wifi-diagnostics" ]; then
+        print_message "${YELLOW}" "A file or symbolic link already exists at /usr/local/bin/wifi-diagnostics."
+        echo -n "Do you want to overwrite it? (y/n): "
+        read -r overwrite
+        if [ "$overwrite" != "y" ] && [ "$overwrite" != "Y" ]; then
+            print_message "${YELLOW}" "Skipping symbolic link creation."
+            return 0
+        fi
+        print_message "${BLUE}" "Removing existing symbolic link..."
+        rm -f "/usr/local/bin/wifi-diagnostics"
+    fi
+    
+    # Create the symbolic link
+    print_message "${BLUE}" "Creating symbolic link to $SCRIPT_PATH..."
+    if ln -s "$SCRIPT_PATH" "/usr/local/bin/wifi-diagnostics"; then
+        print_message "${GREEN}" "✓ Symbolic link created successfully."
+        print_message "${GREEN}" "You can now run 'wifi-diagnostics' from anywhere."
+    else
+        print_message "${RED}" "✗ Failed to create symbolic link. You may need to run the script with sudo privileges."
+    fi
+}
 
-# Report any failed packages
-if [ ${#failed_packages[@]} -ne 0 ]; then
-    echo -e "${YELLOW}The following packages failed to install:${NC}"
-    printf '%s\n' "${failed_packages[@]}"
-fi
+# Main execution
+main() {
+    print_message "${PURPLE}" "===== WiFi Troubleshooter Installation Script ====="
+    
+    # Check for root/sudo privileges
+    check_root
+    
+    # Detect OS and set package manager
+    detect_os
+    
+    # Install required packages
+    install_packages
+    
+    # Make wifi_troubleshooter.sh executable
+    make_executable
+    
+    # Create symbolic link
+    create_symlink
+    
+    print_message "${PURPLE}" "===== Installation Complete ====="
+    print_message "${GREEN}" "You can now run ./wifi_troubleshooter.sh"
+}
 
-echo -e "${GREEN}Installation complete!${NC}"
-echo -e "You can now run the tool by typing: ${BLUE}wifi-diagnostics${NC}"
+# Run the main function
+main
+

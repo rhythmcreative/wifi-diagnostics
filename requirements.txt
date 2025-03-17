@@ -1,32 +1,23 @@
-# Core requirements
-python3
-python-pip
+# System packages required for WiFi Diagnostics Tool
 
-# Basic network commands and utilities
-iproute2
-wireless-tools
+# net-tools - Provides network utilities including ifconfig for network interface information
 net-tools
+
+# iw - Modern command line tool for wireless device configuration and information
 iw
-NetworkManager
+
+# wireless_tools - Provides iwconfig and other wireless utilities for configuring wireless interfaces
+wireless-tools
+
+# bind - DNS utilities including dig command for DNS diagnostics
+bind
+
+# NetworkManager - Network management daemon and nmcli utility for managing network connections
+networkmanager
+
+# pciutils - Utilities for inspecting PCI devices, including lspci for hardware identification
+pciutils
+
+# wpa_supplicant - Key tool for WiFi authentication, encryption, and connection management
 wpa_supplicant
 
-# DHCP clients
-dhcpcd
-dhclient
-
-# Hardware management
-pciutils
-rfkill
-lshw
-
-# Network diagnostics and tools
-speedtest-cli
-nmap
-tcpdump
-netcat-openbsd
-bind-utils
-dnsutils
-iptables
-curl
-wget
-bc

@@ -197,7 +197,7 @@ advanced_tools() {
     echo -e "${BOLD}${BLUE}┌────────────────────────────────────────────────────────────┐${NC}"
     echo -e "${BOLD}${BLUE}└────────────────────────────────────────────────────────────┘${NC}"
     echo
-    echo -n "  ${BOLD}Enter your choice [1-12]:${NC} "
+    echo -e -n "  ${BOLD}Enter your choice [1-12]:${NC} "
     read -r advanced_choice
     case $advanced_choice in
         1)
