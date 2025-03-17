@@ -11,7 +11,7 @@
  ╚══╝╚══╝ ╚═╝╚═╝     ╚═╝    ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚══════╝
 ```
 
-Hey there! Tired of WiFi problems? We've got you covered! 
+Hey there! Tired of WiFi problems? I've got you covered! 
 This tool makes fixing your WiFi as easy as making a cup of coffee. ☕
 
 </div>
