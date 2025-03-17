@@ -40,6 +40,7 @@ The tool provides guided diagnostics and recommendations to improve your wireles
 
 2. Run the installer:
    ```bash
+   chmod +x install.sh
    sudo ./install.sh
    ```
 
