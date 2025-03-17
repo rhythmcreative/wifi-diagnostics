@@ -1,87 +1,89 @@
 <div align="center">
-
-# Welcome to WiFi Repairs! 👋
-
+  
 ```
-██╗    ██╗██╗███████╗██╗    ██████╗ ███████╗██████╗  █████╗ ██╗██████╗ ███████╗
-██║    ██║██║██╔════╝██║    ██╔══██╗██╔════╝██╔══██╗██╔══██╗██║██╔══██╗██╔════╝
-██║ █╗ ██║██║█████╗  ██║    ██████╔╝█████╗  ██████╔╝███████║██║██████╔╝███████╗
-██║███╗██║██║██╔══╝  ██║    ██╔══██╗██╔══╝  ██╔═══╝ ██╔══██║██║██╔══██╗╚════██║
-╚███╔███╔╝██║██║     ██║    ██║  ██║███████╗██║     ██║  ██║██║██║  ██║███████║
- ╚══╝╚══╝ ╚═╝╚═╝     ╚═╝    ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚══════╝
+     (  )   (   )  )
+      ) (   )  (  (
+      ( )  (    ) )
+     _____________
+    <_____________> ___
+    |             |/ _ \
+    |               | | |
+    |               |_| |
+ ___|             |\___/
+/    \___________/    \
+\_____________________/
 ```
-Hey there! Tired of WiFi problems? I've got you covered! 
-This tool makes fixing your WiFi as easy as making a cup of coffee. ☕
+
+# WiFi Repairs
+
+A diagnostic tool to identify and fix common WiFi connectivity issues on Linux systems.
 
 </div>
 
-## What Can This Do For You?
+## 📡 Overview
 
-Ever had these WiFi problems?
-- "My WiFi keeps dropping out" 
-- "Why is my internet so slow?"
-- "I can't connect to my network!"
+WiFi Repairs is a command-line utility that helps troubleshoot and resolve various WiFi problems, including:
 
-WiFi Repairs helps you fix all these issues and more! It's like having a network expert right in your terminal.
+- Connection dropouts
+- Slow internet speeds
+- Network connectivity issues
 
-## Getting Started (It's Super Easy!)
+The tool provides guided diagnostics and recommendations to improve your wireless network performance.
 
-1. First, grab a copy of WiFi Repairs:
+## 🔧 Installation
+
+1. Clone the repository:
    ```bash
-   git clone https://github.com/rhythmcreative/wifi-diagnostics.git
+   git clone <repository-url>
    cd wifi-diagnostics-tool
    ```
 
-2. Let our installer do all the work:
+2. Run the installer:
    ```bash
    sudo ./install.sh
    ```
-   That's it! We'll install everything you need automatically.
 
-3. Now you can run it anytime by typing:
+3. Launch the tool:
    ```bash
    wifi-diagnostics
    ```
 
-## Cool Things You Can Do
+## ✨ Features
 
-- Find the best WiFi channel for your network
-- Check why your connection is slow
-- Test your internet speed
-- Find and fix connection problems
-- Get detailed network information
-- And more things
+- WiFi channel optimization
+- Connection speed analysis
+- Internet speed testing
+- Automated troubleshooting
+- Network information gathering
 
-The tool guides you through everything with simple menus - no complicated commands needed!
+The tool provides interactive menus to guide you through the diagnostic process.
 
-## Need Help?
+## 📋 Requirements
 
-Having trouble? No worries! Here's what you can do:
+- Linux operating system
+- sudo privileges (for network tool installation)
+- Basic networking hardware
 
-- Check if you're running Linux (that's what this tool is made for)
-- Make sure you have sudo access (for installing network tools)
-- Still stuck? Open an issue and we'll help you out!
+## 🛠️ Troubleshooting
 
-## Common Questions
+If you encounter issues:
 
-**Q: Is it safe to use?**
-A: Absolutely! We only use standard Linux networking tools.
+- Verify you're using a Linux distribution
+- Ensure you have sudo access
+- Open an issue on our repository for assistance
 
-**Q: Will it work on my computer?**
-A: If you're running Linux, you're good to go!
+## ❓ FAQ
 
-**Q: Do I need to be a network expert?**
-A: Not at all! The tool explains everything as you go.
+**Q: Is it safe to use?**  
+A: Yes, the tool only utilizes standard Linux networking utilities.
 
-
-**Q: Does it work on other distros?**
-A: For now it only works with arch.
-
-
-I hope this tool makes your WiFi troubles disappear.
+**Q: Do I need technical expertise?**  
+A: No, the tool is designed for users of all skill levels.
 
 ---
 
 <div align="center">
-Made with ❤️ to make Linux community :)
+  
+### 🌐 WiFi Repairs - Simplifying network troubleshooting
+
 </div>
