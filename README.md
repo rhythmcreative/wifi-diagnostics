@@ -34,7 +34,7 @@ The tool provides guided diagnostics and recommendations to improve your wireles
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/rhythmcreative/wifi-diagnostics.git
    cd wifi-diagnostics-tool
    ```
 
