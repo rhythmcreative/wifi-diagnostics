@@ -1338,6 +1338,8 @@ check_signal_strength() {
     echo
     read -p "  Press Enter to continue... "
     return 0
+}
+
 # Test Internet connectivity
 check_internet_connectivity() {
     print_header "Testing Internet Connectivity"
@@ -1386,13 +1388,7 @@ check_internet_connectivity() {
         print_error "The 'ping' command is not available. Cannot test connectivity."
     fi
     
-    echo
-    echo
-    echo -e "${BOLD}${BLUE}────────────────────────────────────────────────────────────────${NC}"
-    echo
-    read -p "  Press Enter to continue... "
     return 0
-}
 }
 
 # Provide recommendations based on findings
@@ -2088,6 +2084,7 @@ main() {
                 ;;
             4)
                 check_internet_connectivity
+                wait_for_user_input
                 ;;
             5)
                 run_full_diagnostic
